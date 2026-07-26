@@ -1,0 +1,1874 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>倍率つきランダムルーレット</title>
+  <style>
+    :root {
+      --bg1: #080b1a;
+      --bg2: #111938;
+      --panel: rgba(16, 24, 54, 0.78);
+      --panel-border: rgba(255, 255, 255, 0.12);
+      --text: #f7f8ff;
+      --muted: #aeb8d7;
+      --accent: #7c5cff;
+      --accent2: #22d3ee;
+      --success: #35e59a;
+      --danger: #ff5d7a;
+      --warning: #ffcc4d;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--bg1);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family:
+        "Segoe UI",
+        "Yu Gothic UI",
+        "Meiryo",
+        system-ui,
+        -apple-system,
+        sans-serif;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 12% 14%, rgba(124, 92, 255, 0.24), transparent 28%),
+        radial-gradient(circle at 86% 10%, rgba(34, 211, 238, 0.16), transparent 25%),
+        radial-gradient(circle at 68% 82%, rgba(255, 77, 141, 0.14), transparent 32%),
+        linear-gradient(145deg, var(--bg1), var(--bg2));
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: auto;
+      width: 360px;
+      height: 360px;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.19;
+      pointer-events: none;
+      z-index: -2;
+      animation: floatBlob 10s ease-in-out infinite alternate;
+    }
+
+    body::before {
+      top: 10%;
+      left: -140px;
+      background: #6e5bff;
+    }
+
+    body::after {
+      right: -130px;
+      bottom: 4%;
+      background: #11d9e8;
+      animation-delay: -4s;
+    }
+
+    @keyframes floatBlob {
+      from { transform: translate3d(0, 0, 0) scale(1); }
+      to { transform: translate3d(35px, -24px, 0) scale(1.15); }
+    }
+
+    .app {
+      width: min(1480px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 24px 0 42px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+      padding: 18px 22px;
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      background: rgba(11, 17, 39, 0.7);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .title-wrap {
+      min-width: 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 3vw, 40px);
+      letter-spacing: 0.02em;
+      line-height: 1.1;
+      background: linear-gradient(90deg, #ffffff, #b8c5ff 45%, #55e8ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 0 30px rgba(124, 92, 255, 0.2);
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .save-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      color: #cfe9ff;
+      font-size: 13px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(87, 228, 255, 0.18);
+      background: rgba(34, 211, 238, 0.08);
+    }
+
+    .save-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 14px var(--success);
+      animation: savePulse 2s infinite;
+    }
+
+    @keyframes savePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.8); }
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(310px, 440px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--panel-border);
+      border-radius: 26px;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .editor-panel {
+      position: sticky;
+      top: 14px;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .counter {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .input-area {
+      padding: 16px 16px 4px;
+    }
+
+    .input-label {
+      display: block;
+      color: #d9e0ff;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .quick-add {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 96px auto;
+      gap: 8px;
+    }
+
+    input,
+    button {
+      font: inherit;
+    }
+
+    .text-input,
+    .weight-input {
+      width: 100%;
+      min-width: 0;
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.13);
+      background: rgba(255,255,255,0.075);
+      outline: none;
+      border-radius: 13px;
+      transition: 0.2s ease;
+    }
+
+    .text-input {
+      height: 44px;
+      padding: 0 13px;
+    }
+
+    .weight-input {
+      height: 38px;
+      padding: 0 9px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .text-input:focus,
+    .weight-input:focus {
+      border-color: rgba(90, 231, 255, 0.8);
+      box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.1);
+      background: rgba(255,255,255,0.1);
+    }
+
+    .btn {
+      position: relative;
+      border: 0;
+      border-radius: 13px;
+      min-height: 42px;
+      padding: 0 15px;
+      color: white;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: transform 0.16s ease, filter 0.16s ease, opacity 0.16s ease;
+      overflow: hidden;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(115deg, transparent 15%, rgba(255,255,255,0.28), transparent 70%);
+      transform: translateX(-130%);
+      transition: transform 0.5s ease;
+    }
+
+    .btn:hover::after {
+      transform: translateX(130%);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+    }
+
+    .btn:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+      transform: none;
+      filter: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #7657ff, #4d90ff);
+      box-shadow: 0 10px 26px rgba(98, 88, 255, 0.28);
+    }
+
+    .btn-cyan {
+      background: linear-gradient(135deg, #0fa8c6, #22d3ee);
+      color: #06111c;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #14b86d, #3ce6a0);
+      color: #04150d;
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #ff426d, #ff6a5c);
+      box-shadow: 0 10px 24px rgba(255, 71, 106, 0.2);
+    }
+
+    .btn-muted {
+      background: rgba(255,255,255,0.095);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #eaf0ff;
+    }
+
+    .list-toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 12px 16px 10px;
+    }
+
+    .list-toolbar .btn {
+      flex: 1;
+      min-width: 112px;
+      min-height: 40px;
+      font-size: 13px;
+    }
+
+    .participant-list {
+      max-height: calc(100vh - 320px);
+      min-height: 150px;
+      overflow: auto;
+      padding: 8px 12px 16px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(124,92,255,0.7) rgba(255,255,255,0.05);
+    }
+
+    .participant-list::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .participant-list::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.04);
+      border-radius: 99px;
+    }
+
+    .participant-list::-webkit-scrollbar-thumb {
+      background: linear-gradient(#7657ff, #22d3ee);
+      border-radius: 99px;
+    }
+
+    .participant-row {
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr) 78px 38px;
+      gap: 8px;
+      align-items: center;
+      margin: 7px 0;
+      padding: 9px;
+      border-radius: 15px;
+      border: 1px solid rgba(255,255,255,0.075);
+      background: rgba(255,255,255,0.045);
+      transition: 0.2s ease;
+      animation: rowIn 0.24s ease both;
+    }
+
+    @keyframes rowIn {
+      from { opacity: 0; transform: translateY(7px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .participant-row:hover {
+      border-color: rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.072);
+    }
+
+    .participant-row.inactive {
+      opacity: 0.47;
+      filter: grayscale(0.45);
+    }
+
+    .color-dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      box-shadow: 0 0 11px currentColor;
+    }
+
+    .name-edit {
+      height: 38px;
+      padding: 0 9px;
+      color: var(--text);
+      border: 1px solid transparent;
+      background: transparent;
+      outline: none;
+      border-radius: 10px;
+      min-width: 0;
+      font-weight: 700;
+    }
+
+    .name-edit:focus {
+      border-color: rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+    }
+
+    .remove-btn {
+      width: 38px;
+      height: 38px;
+      border: 0;
+      border-radius: 11px;
+      background: rgba(255, 93, 122, 0.12);
+      color: #ff91a6;
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+      transition: 0.16s ease;
+    }
+
+    .remove-btn:hover {
+      background: rgba(255, 93, 122, 0.24);
+      transform: scale(1.06);
+    }
+
+    .empty-list {
+      min-height: 145px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.7;
+      padding: 20px;
+    }
+
+    .roulette-panel {
+      min-height: 720px;
+      position: relative;
+    }
+
+    .roulette-content {
+      padding: 18px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat-card {
+      padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.045);
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .stat-value {
+      margin-top: 3px;
+      font-size: 20px;
+      font-weight: 900;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .wheel-stage {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 530px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 24px;
+      background:
+        radial-gradient(circle, rgba(124,92,255,0.11), transparent 49%),
+        linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.01));
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .wheel-stage::before {
+      content: "";
+      position: absolute;
+      width: min(72vw, 660px);
+      height: min(72vw, 660px);
+      max-width: 660px;
+      max-height: 660px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.055);
+      box-shadow:
+        0 0 0 28px rgba(255,255,255,0.018),
+        0 0 0 58px rgba(255,255,255,0.012);
+      z-index: -1;
+      animation: aura 4s ease-in-out infinite;
+    }
+
+    @keyframes aura {
+      0%, 100% { transform: scale(0.98); opacity: 0.65; }
+      50% { transform: scale(1.02); opacity: 1; }
+    }
+
+    .wheel-shell {
+      position: relative;
+      width: min(73vw, 500px);
+      aspect-ratio: 1;
+      max-width: 500px;
+      filter: drop-shadow(0 28px 35px rgba(0,0,0,0.4));
+    }
+
+    #wheelCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: 50%;
+    }
+
+    .pointer {
+      position: absolute;
+      left: 50%;
+      top: -8px;
+      transform: translateX(-50%);
+      width: 54px;
+      height: 72px;
+      z-index: 6;
+      filter: drop-shadow(0 8px 8px rgba(0,0,0,0.45));
+    }
+
+    .pointer::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 25px solid transparent;
+      border-right: 25px solid transparent;
+      border-top: 64px solid #fff6c9;
+    }
+
+    .pointer::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 4px;
+      transform: translateX(-50%);
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ffcc4d;
+      box-shadow: 0 0 20px #ffcc4d;
+    }
+
+    .center-cap {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 116px;
+      height: 116px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      border: 9px solid rgba(255,255,255,0.88);
+      background:
+        radial-gradient(circle at 35% 28%, #9ef5ff, #5868ff 40%, #2f175e 75%);
+      box-shadow:
+        inset 0 0 24px rgba(255,255,255,0.28),
+        0 0 0 7px rgba(255,255,255,0.11),
+        0 0 36px rgba(70, 125, 255, 0.7);
+      display: grid;
+      place-items: center;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .center-cap span {
+      font-size: 15px;
+      font-weight: 1000;
+      letter-spacing: 0.12em;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.45);
+    }
+
+    .spin-controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+
+    .spin-button {
+      min-width: min(100%, 300px);
+      min-height: 62px;
+      border-radius: 20px;
+      font-size: 20px;
+      text-transform: uppercase;
+      background:
+        linear-gradient(120deg, #7053ff, #2a8dff 52%, #17cfe5);
+      box-shadow:
+        0 18px 35px rgba(73, 88, 255, 0.34),
+        inset 0 1px 0 rgba(255,255,255,0.32);
+    }
+
+    .result-card {
+      margin-top: 14px;
+      min-height: 92px;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,0.085);
+      border-radius: 19px;
+      background: rgba(255,255,255,0.045);
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      transition: 0.25s ease;
+    }
+
+    .result-card.has-result {
+      border-color: rgba(255, 224, 105, 0.5);
+      background:
+        radial-gradient(circle at 10% 50%, rgba(255,204,77,0.16), transparent 35%),
+        rgba(255,255,255,0.055);
+      box-shadow: 0 0 28px rgba(255, 204, 77, 0.1);
+    }
+
+    .result-kicker {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .result-name {
+      font-size: clamp(20px, 3vw, 34px);
+      font-weight: 1000;
+      line-height: 1.14;
+      word-break: break-word;
+    }
+
+    .result-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .result-actions .btn {
+      min-height: 45px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .toast-area {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 50;
+      display: grid;
+      gap: 9px;
+      pointer-events: none;
+    }
+
+    .toast {
+      min-width: 220px;
+      max-width: min(420px, calc(100vw - 36px));
+      padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      background: rgba(15, 22, 46, 0.95);
+      color: white;
+      box-shadow: 0 18px 35px rgba(0,0,0,0.35);
+      backdrop-filter: blur(15px);
+      animation: toastIn 0.25s ease, toastOut 0.25s ease 2.55s forwards;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes toastOut {
+      to { opacity: 0; transform: translateY(8px) scale(0.98); }
+    }
+
+    .winner-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 40;
+      display: grid;
+      place-items: center;
+      padding: 22px;
+      background: rgba(4, 6, 16, 0.56);
+      backdrop-filter: blur(8px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .winner-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .winner-modal {
+      position: relative;
+      width: min(610px, calc(100% - 28px));
+      padding: 30px 24px 24px;
+      text-align: center;
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background:
+        radial-gradient(circle at 50% 0%, rgba(255,221,94,0.26), transparent 38%),
+        linear-gradient(145deg, rgba(33, 31, 82, 0.97), rgba(10, 19, 47, 0.97));
+      box-shadow:
+        0 40px 100px rgba(0,0,0,0.58),
+        0 0 80px rgba(124,92,255,0.25);
+      transform: scale(0.72) translateY(24px);
+      transition: transform 0.35s cubic-bezier(.2, .9, .2, 1.2);
+      overflow: hidden;
+    }
+
+    .winner-overlay.show .winner-modal {
+      transform: scale(1) translateY(0);
+    }
+
+    .winner-modal::before {
+      content: "";
+      position: absolute;
+      inset: -160%;
+      background: conic-gradient(
+        transparent,
+        rgba(255,255,255,0.08),
+        transparent 22%,
+        rgba(34,211,238,0.1),
+        transparent 45%
+      );
+      animation: modalGlow 5s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes modalGlow {
+      to { transform: rotate(360deg); }
+    }
+
+    .winner-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .winner-crown {
+      font-size: 58px;
+      line-height: 1;
+      filter: drop-shadow(0 8px 15px rgba(255,204,77,0.35));
+      animation: crownBounce 0.8s ease infinite alternate;
+    }
+
+    @keyframes crownBounce {
+      from { transform: translateY(0) rotate(-4deg); }
+      to { transform: translateY(-7px) rotate(4deg); }
+    }
+
+    .winner-title {
+      margin-top: 8px;
+      color: #ffe988;
+      font-weight: 1000;
+      letter-spacing: 0.16em;
+      font-size: 14px;
+    }
+
+    .winner-name {
+      margin: 12px 0 5px;
+      font-size: clamp(34px, 7vw, 62px);
+      font-weight: 1000;
+      line-height: 1.05;
+      word-break: break-word;
+      background: linear-gradient(90deg, #ffffff, #fff1a6, #7feeff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 12px 40px rgba(0,0,0,0.28);
+    }
+
+    .winner-weight {
+      color: #cbd6f8;
+      margin-bottom: 20px;
+    }
+
+    .winner-modal-actions {
+      display: flex;
+      justify-content: center;
+      gap: 9px;
+      flex-wrap: wrap;
+    }
+
+    .confetti-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 45;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .confetti {
+      position: absolute;
+      top: -25px;
+      width: 10px;
+      height: 18px;
+      opacity: 0.95;
+      animation: confettiFall var(--duration) linear forwards;
+      transform: translate3d(0, 0, 0) rotate(0);
+    }
+
+    @keyframes confettiFall {
+      0% {
+        transform: translate3d(0, -20px, 0) rotate(0deg);
+      }
+      100% {
+        transform: translate3d(var(--drift), 115vh, 0) rotate(var(--spin));
+      }
+    }
+
+    .spark {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: white;
+      box-shadow: 0 0 15px currentColor;
+      animation: sparkle 1.9s ease-in-out infinite;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    @keyframes sparkle {
+      0%, 100% { opacity: 0; transform: scale(0.4); }
+      50% { opacity: 0.9; transform: scale(1.45); }
+    }
+
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(0,0,0,0.52);
+      backdrop-filter: blur(6px);
+    }
+
+    .confirm-box {
+      width: min(420px, 94vw);
+      padding: 22px;
+      border-radius: 22px;
+      background: #131b3b;
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 26px 70px rgba(0,0,0,0.5);
+    }
+
+    .confirm-box h3 {
+      margin: 0 0 9px;
+    }
+
+    .confirm-box p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .confirm-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .shake {
+      animation: shake 0.3s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+
+    @media (max-width: 920px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .editor-panel {
+        position: static;
+      }
+
+      .participant-list {
+        max-height: 390px;
+      }
+
+      .roulette-panel {
+        min-height: 0;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .app {
+        width: min(100% - 16px, 1480px);
+        padding-top: 8px;
+      }
+
+      .header {
+        align-items: flex-start;
+        padding: 16px;
+        border-radius: 20px;
+      }
+
+      .save-indicator {
+        padding: 7px 9px;
+        font-size: 11px;
+      }
+
+      .subtitle {
+        font-size: 12px;
+      }
+
+      .panel {
+        border-radius: 21px;
+      }
+
+      .quick-add {
+        grid-template-columns: minmax(0, 1fr) 82px;
+      }
+
+      #addBtn {
+        grid-column: 1 / -1;
+      }
+
+      .stats {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .stats .stat-card:last-child {
+        grid-column: 1 / -1;
+      }
+
+      .roulette-content {
+        padding: 10px;
+      }
+
+      .wheel-stage {
+        min-height: 390px;
+      }
+
+      .wheel-shell {
+        width: min(88vw, 430px);
+      }
+
+      .center-cap {
+        width: 91px;
+        height: 91px;
+        border-width: 7px;
+      }
+
+      .center-cap span {
+        font-size: 12px;
+      }
+
+      .result-card {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .result-actions {
+        justify-content: stretch;
+      }
+
+      .result-actions .btn {
+        flex: 1;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="title-wrap">
+        <h1>倍率つきランダムルーレット</h1>
+        <p class="subtitle">倍率が大きい人ほど、ルーレットの枠と当選確率が大きくなります。</p>
+      </div>
+      <div class="save-indicator" title="入力内容はこのブラウザに自動保存されます">
+        <span class="save-dot"></span>
+        自動保存
+      </div>
+    </header>
+
+    <main class="main-grid">
+      <section class="panel editor-panel">
+        <div class="panel-head">
+          <h2 class="panel-title">参加者設定</h2>
+          <span id="memberCounter" class="counter">0人</span>
+        </div>
+
+        <div class="input-area">
+          <label class="input-label" for="newName">名前と倍率を入力</label>
+          <div class="quick-add">
+            <input id="newName" class="text-input" type="text" maxlength="40" placeholder="例：パパ" autocomplete="off" />
+            <input id="newWeight" class="text-input" type="number" min="0" max="999999" step="0.1" value="10" inputmode="decimal" aria-label="倍率" />
+            <button id="addBtn" class="btn btn-primary" type="button">追加</button>
+          </div>
+        </div>
+
+        <div class="list-toolbar">
+          <button id="reviveAllBtn" class="btn btn-success" type="button">全員復活</button>
+          <button id="deleteAllBtn" class="btn btn-danger" type="button">全削除</button>
+        </div>
+
+        <div id="participantList" class="participant-list"></div>
+      </section>
+
+      <section class="panel roulette-panel">
+        <div class="roulette-content">
+          <div class="stats">
+            <div class="stat-card">
+              <div class="stat-label">抽選対象</div>
+              <div id="activeCount" class="stat-value">0人</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">倍率合計</div>
+              <div id="totalWeight" class="stat-value">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">直近の当選</div>
+              <div id="lastWinnerStat" class="stat-value">―</div>
+            </div>
+          </div>
+
+          <div id="wheelStage" class="wheel-stage">
+            <div class="wheel-shell">
+              <div class="pointer"></div>
+              <canvas id="wheelCanvas" width="1000" height="1000" aria-label="ランダムルーレット"></canvas>
+              <div class="center-cap"><span>ROULETTE</span></div>
+            </div>
+
+            <div id="winnerOverlay" class="winner-overlay" role="dialog" aria-modal="true" aria-labelledby="winnerName">
+              <div class="winner-modal">
+                <div class="winner-content">
+                  <div class="winner-crown">👑</div>
+                  <div class="winner-title">WINNER</div>
+                  <div id="winnerName" class="winner-name">当選者</div>
+                  <div id="winnerWeight" class="winner-weight">倍率 10</div>
+                  <div class="winner-modal-actions">
+                    <button id="modalHalveBtn" class="btn btn-cyan" type="button">倍率半分</button>
+                    <button id="modalHideBtn" class="btn btn-danger" type="button">非表示</button>
+                    <button id="closeWinnerBtn" class="btn btn-muted" type="button">閉じる</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="spin-controls">
+            <button id="spinBtn" class="btn spin-button" type="button">ルーレットを回す</button>
+          </div>
+
+          <div id="resultCard" class="result-card">
+            <div>
+              <div class="result-kicker">抽選結果</div>
+              <div id="resultName" class="result-name">まだ抽選されていません</div>
+            </div>
+            <div id="resultActions" class="result-actions hidden">
+              <button id="halveBtn" class="btn btn-cyan" type="button">倍率半分</button>
+              <button id="hideBtn" class="btn btn-danger" type="button">非表示</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="confirmOverlay" class="confirm-overlay hidden">
+    <div class="confirm-box">
+      <h3>全て削除しますか？</h3>
+      <p>入力した名前と倍率を全て削除します。この操作は元に戻せません。</p>
+      <div class="confirm-actions">
+        <button id="cancelDeleteBtn" class="btn btn-muted" type="button">キャンセル</button>
+        <button id="confirmDeleteBtn" class="btn btn-danger" type="button">全削除する</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confettiLayer" class="confetti-layer"></div>
+  <div id="toastArea" class="toast-area"></div>
+
+  <script>
+    "use strict";
+
+    const STORAGE_KEY = "weightedRouletteParticipants_v1";
+    const LAST_WINNER_KEY = "weightedRouletteLastWinner_v1";
+    const TAU = Math.PI * 2;
+
+    const COLORS = [
+      "#6657ff", "#0eb8dc", "#ff5d8f", "#ff9f43", "#33d69f",
+      "#aa66ff", "#4b8cff", "#f65f62", "#e8c547", "#27c6bf",
+      "#db62ff", "#57c36b", "#ef6c35", "#3f68e8", "#e7468a"
+    ];
+
+    const participantList = document.getElementById("participantList");
+    const memberCounter = document.getElementById("memberCounter");
+    const activeCount = document.getElementById("activeCount");
+    const totalWeight = document.getElementById("totalWeight");
+    const lastWinnerStat = document.getElementById("lastWinnerStat");
+    const newName = document.getElementById("newName");
+    const newWeight = document.getElementById("newWeight");
+    const addBtn = document.getElementById("addBtn");
+    const reviveAllBtn = document.getElementById("reviveAllBtn");
+    const deleteAllBtn = document.getElementById("deleteAllBtn");
+    const spinBtn = document.getElementById("spinBtn");
+    const wheelCanvas = document.getElementById("wheelCanvas");
+    const wheelStage = document.getElementById("wheelStage");
+    const ctx = wheelCanvas.getContext("2d");
+    const resultCard = document.getElementById("resultCard");
+    const resultName = document.getElementById("resultName");
+    const resultActions = document.getElementById("resultActions");
+    const halveBtn = document.getElementById("halveBtn");
+    const hideBtn = document.getElementById("hideBtn");
+    const winnerOverlay = document.getElementById("winnerOverlay");
+    const winnerName = document.getElementById("winnerName");
+    const winnerWeight = document.getElementById("winnerWeight");
+    const modalHalveBtn = document.getElementById("modalHalveBtn");
+    const modalHideBtn = document.getElementById("modalHideBtn");
+    const closeWinnerBtn = document.getElementById("closeWinnerBtn");
+    const confettiLayer = document.getElementById("confettiLayer");
+    const toastArea = document.getElementById("toastArea");
+    const confirmOverlay = document.getElementById("confirmOverlay");
+    const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+    const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+
+    let participants = loadParticipants();
+    let rotation = 0;
+    let spinning = false;
+    let selectedId = null;
+    let animationFrameId = null;
+
+    function uid() {
+      return "p_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 9);
+    }
+
+    function sanitizeWeight(value) {
+      const number = Number(value);
+      if (!Number.isFinite(number) || number < 0) return 0;
+      return Math.min(number, 999999);
+    }
+
+    function formatWeight(value) {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return "0";
+      return Number.isInteger(num)
+        ? num.toLocaleString("ja-JP")
+        : num.toLocaleString("ja-JP", { maximumFractionDigits: 4 });
+    }
+
+    function loadParticipants() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!Array.isArray(saved)) return [];
+        return saved
+          .filter(item => item && typeof item.name === "string")
+          .map((item, index) => ({
+            id: typeof item.id === "string" ? item.id : uid(),
+            name: item.name.slice(0, 40),
+            weight: sanitizeWeight(item.weight),
+            color: typeof item.color === "string" ? item.color : COLORS[index % COLORS.length]
+          }));
+      } catch (error) {
+        console.warn("保存データを読み込めませんでした。", error);
+        return [];
+      }
+    }
+
+    function saveParticipants() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(participants));
+      } catch (error) {
+        console.warn("ローカルストレージへの保存に失敗しました。", error);
+        showToast("保存に失敗しました。ブラウザの設定をご確認ください。");
+      }
+    }
+
+    function getActiveParticipants() {
+      return participants.filter(item => sanitizeWeight(item.weight) > 0 && item.name.trim() !== "");
+    }
+
+    function getSelectedParticipant() {
+      return participants.find(item => item.id === selectedId) || null;
+    }
+
+    function chooseColor(index) {
+      const used = new Set(participants.map(item => item.color));
+      for (const color of COLORS) {
+        if (!used.has(color)) return color;
+      }
+      return COLORS[index % COLORS.length];
+    }
+
+    function addParticipant() {
+      if (spinning) return;
+
+      const name = newName.value.trim();
+      const weight = sanitizeWeight(newWeight.value);
+
+      if (!name) {
+        newName.classList.remove("shake");
+        void newName.offsetWidth;
+        newName.classList.add("shake");
+        newName.focus();
+        showToast("名前を入力してください。");
+        return;
+      }
+
+      participants.push({
+        id: uid(),
+        name,
+        weight,
+        color: chooseColor(participants.length)
+      });
+
+      saveParticipants();
+      newName.value = "";
+      newWeight.value = "10";
+      selectedId = null;
+      renderAll();
+      newName.focus();
+      showToast("参加者を追加しました。");
+    }
+
+    function removeParticipant(id) {
+      if (spinning) return;
+      participants = participants.filter(item => item.id !== id);
+      if (selectedId === id) {
+        selectedId = null;
+        resetResult();
+      }
+      saveParticipants();
+      renderAll();
+    }
+
+    function updateParticipant(id, key, value) {
+      const participant = participants.find(item => item.id === id);
+      if (!participant) return;
+
+      if (key === "name") {
+        participant.name = String(value).slice(0, 40);
+      } else if (key === "weight") {
+        participant.weight = sanitizeWeight(value);
+      }
+
+      saveParticipants();
+      renderStats();
+      drawWheel(rotation);
+      updateSelectedResultText();
+      refreshRowState(id);
+    }
+
+    function refreshRowState(id) {
+      const row = participantList.querySelector(`[data-id="${CSS.escape(id)}"]`);
+      const participant = participants.find(item => item.id === id);
+      if (!row || !participant) return;
+      row.classList.toggle("inactive", participant.weight <= 0 || !participant.name.trim());
+    }
+
+    function renderParticipantList() {
+      participantList.innerHTML = "";
+
+      if (participants.length === 0) {
+        participantList.innerHTML = `
+          <div class="empty-list">
+            名前を追加すると、ここに一覧が表示されます。<br>
+            倍率の初期値は10です。
+          </div>
+        `;
+        return;
+      }
+
+      participants.forEach((participant, index) => {
+        const row = document.createElement("div");
+        row.className = "participant-row";
+        row.dataset.id = participant.id;
+        if (participant.weight <= 0 || !participant.name.trim()) {
+          row.classList.add("inactive");
+        }
+
+        const dot = document.createElement("span");
+        dot.className = "color-dot";
+        dot.style.background = participant.color;
+        dot.style.color = participant.color;
+
+        const nameInput = document.createElement("input");
+        nameInput.className = "name-edit";
+        nameInput.type = "text";
+        nameInput.maxLength = 40;
+        nameInput.value = participant.name;
+        nameInput.setAttribute("aria-label", `${index + 1}人目の名前`);
+        nameInput.addEventListener("input", event => {
+          updateParticipant(participant.id, "name", event.target.value);
+        });
+
+        const weightInput = document.createElement("input");
+        weightInput.className = "weight-input";
+        weightInput.type = "number";
+        weightInput.min = "0";
+        weightInput.max = "999999";
+        weightInput.step = "0.1";
+        weightInput.inputMode = "decimal";
+        weightInput.value = participant.weight;
+        weightInput.title = "倍率。0にすると抽選対象外になります。";
+        weightInput.setAttribute("aria-label", `${participant.name || index + 1 + "人目"}の倍率`);
+        weightInput.addEventListener("input", event => {
+          updateParticipant(participant.id, "weight", event.target.value);
+        });
+        weightInput.addEventListener("blur", event => {
+          event.target.value = sanitizeWeight(event.target.value);
+        });
+
+        const removeButton = document.createElement("button");
+        removeButton.className = "remove-btn";
+        removeButton.type = "button";
+        removeButton.innerHTML = "&times;";
+        removeButton.title = `${participant.name || "この参加者"}を削除`;
+        removeButton.setAttribute("aria-label", `${participant.name || "この参加者"}を削除`);
+        removeButton.addEventListener("click", () => removeParticipant(participant.id));
+
+        row.append(dot, nameInput, weightInput, removeButton);
+        participantList.appendChild(row);
+      });
+    }
+
+    function renderStats() {
+      const active = getActiveParticipants();
+      const total = active.reduce((sum, item) => sum + sanitizeWeight(item.weight), 0);
+
+      memberCounter.textContent = `${participants.length.toLocaleString("ja-JP")}人`;
+      activeCount.textContent = `${active.length.toLocaleString("ja-JP")}人`;
+      totalWeight.textContent = formatWeight(total);
+      spinBtn.disabled = spinning || active.length === 0 || total <= 0;
+      reviveAllBtn.disabled = spinning || participants.length === 0;
+      deleteAllBtn.disabled = spinning || participants.length === 0;
+      addBtn.disabled = spinning;
+    }
+
+    function renderAll() {
+      renderParticipantList();
+      renderStats();
+      drawWheel(rotation);
+    }
+
+    function drawWheel(currentRotation = 0) {
+      const size = wheelCanvas.width;
+      const center = size / 2;
+      const radius = size * 0.47;
+      const active = getActiveParticipants();
+      const total = active.reduce((sum, item) => sum + sanitizeWeight(item.weight), 0);
+
+      ctx.clearRect(0, 0, size, size);
+      ctx.save();
+      ctx.translate(center, center);
+      ctx.rotate(currentRotation);
+
+      if (active.length === 0 || total <= 0) {
+        drawEmptyWheel(ctx, radius);
+        ctx.restore();
+        return;
+      }
+
+      let startAngle = -Math.PI / 2;
+
+      active.forEach((participant, index) => {
+        const weight = sanitizeWeight(participant.weight);
+        const slice = (weight / total) * TAU;
+        const endAngle = startAngle + slice;
+
+        const gradient = ctx.createRadialGradient(
+          Math.cos(startAngle + slice / 2) * radius * 0.12,
+          Math.sin(startAngle + slice / 2) * radius * 0.12,
+          radius * 0.05,
+          0,
+          0,
+          radius
+        );
+        gradient.addColorStop(0, lightenColor(participant.color, 30));
+        gradient.addColorStop(0.58, participant.color);
+        gradient.addColorStop(1, darkenColor(participant.color, 25));
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "rgba(255,255,255,0.75)";
+        ctx.stroke();
+
+        ctx.save();
+        ctx.rotate(startAngle + slice / 2);
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+
+        const arcPixels = slice * radius;
+        const fontSize = Math.max(15, Math.min(38, arcPixels * 0.22));
+        const textRadius = radius * 0.79;
+        const maxWidth = Math.max(45, radius * 0.48);
+
+        ctx.font = `900 ${fontSize}px "Segoe UI", "Yu Gothic UI", sans-serif`;
+        ctx.lineWidth = Math.max(4, fontSize * 0.18);
+        ctx.strokeStyle = "rgba(0,0,0,0.48)";
+        ctx.fillStyle = "#ffffff";
+
+        const label = fitText(ctx, participant.name, maxWidth);
+        ctx.strokeText(label, textRadius, 0);
+        ctx.fillText(label, textRadius, 0);
+
+        if (arcPixels > 85) {
+          ctx.font = `800 ${Math.max(13, fontSize * 0.52)}px "Segoe UI", sans-serif`;
+          ctx.lineWidth = 4;
+          const weightText = `×${formatWeight(weight)}`;
+          ctx.strokeText(weightText, textRadius, fontSize * 0.84);
+          ctx.fillText(weightText, textRadius, fontSize * 0.84);
+        }
+
+        ctx.restore();
+        startAngle = endAngle;
+      });
+
+      drawWheelRings(ctx, radius);
+      ctx.restore();
+    }
+
+    function drawEmptyWheel(context, radius) {
+      const segments = 12;
+      for (let i = 0; i < segments; i++) {
+        const start = -Math.PI / 2 + i * TAU / segments;
+        const end = start + TAU / segments;
+
+        context.beginPath();
+        context.moveTo(0, 0);
+        context.arc(0, 0, radius, start, end);
+        context.closePath();
+        context.fillStyle = i % 2 === 0
+          ? "rgba(124,92,255,0.35)"
+          : "rgba(34,211,238,0.28)";
+        context.fill();
+        context.lineWidth = 4;
+        context.strokeStyle = "rgba(255,255,255,0.25)";
+        context.stroke();
+      }
+
+      drawWheelRings(context, radius);
+
+      context.save();
+      context.rotate(0);
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillStyle = "rgba(255,255,255,0.82)";
+      context.font = '900 40px "Segoe UI", "Yu Gothic UI", sans-serif';
+      context.fillText("名前を追加してください", 0, -165);
+      context.restore();
+    }
+
+    function drawWheelRings(context, radius) {
+      context.beginPath();
+      context.arc(0, 0, radius, 0, TAU);
+      context.lineWidth = 22;
+      context.strokeStyle = "rgba(255,255,255,0.86)";
+      context.stroke();
+
+      context.beginPath();
+      context.arc(0, 0, radius - 18, 0, TAU);
+      context.lineWidth = 9;
+      context.strokeStyle = "rgba(10,14,35,0.72)";
+      context.stroke();
+
+      context.beginPath();
+      context.arc(0, 0, radius + 4, 0, TAU);
+      context.lineWidth = 5;
+      context.strokeStyle = "rgba(79,220,255,0.65)";
+      context.shadowColor = "#57e5ff";
+      context.shadowBlur = 24;
+      context.stroke();
+      context.shadowBlur = 0;
+    }
+
+    function fitText(context, text, maxWidth) {
+      const value = String(text || "");
+      if (context.measureText(value).width <= maxWidth) return value;
+      let result = value;
+      while (result.length > 1 && context.measureText(result + "…").width > maxWidth) {
+        result = result.slice(0, -1);
+      }
+      return result + "…";
+    }
+
+    function hexToRgb(hex) {
+      const clean = String(hex).replace("#", "");
+      const full = clean.length === 3
+        ? clean.split("").map(char => char + char).join("")
+        : clean;
+      const num = parseInt(full, 16);
+      return {
+        r: (num >> 16) & 255,
+        g: (num >> 8) & 255,
+        b: num & 255
+      };
+    }
+
+    function mixColor(hex, target, amount) {
+      const rgb = hexToRgb(hex);
+      const t = Math.max(0, Math.min(1, amount / 100));
+      const r = Math.round(rgb.r + (target - rgb.r) * t);
+      const g = Math.round(rgb.g + (target - rgb.g) * t);
+      const b = Math.round(rgb.b + (target - rgb.b) * t);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    function lightenColor(hex, amount) {
+      return mixColor(hex, 255, amount);
+    }
+
+    function darkenColor(hex, amount) {
+      return mixColor(hex, 0, amount);
+    }
+
+    function weightedRandom(active) {
+      const total = active.reduce((sum, item) => sum + sanitizeWeight(item.weight), 0);
+      let threshold = Math.random() * total;
+
+      for (const item of active) {
+        threshold -= sanitizeWeight(item.weight);
+        if (threshold < 0) return item;
+      }
+
+      return active[active.length - 1];
+    }
+
+    function getParticipantCenterAngle(targetId) {
+      const active = getActiveParticipants();
+      const total = active.reduce((sum, item) => sum + sanitizeWeight(item.weight), 0);
+      let start = -Math.PI / 2;
+
+      for (const item of active) {
+        const slice = sanitizeWeight(item.weight) / total * TAU;
+        if (item.id === targetId) {
+          return start + slice / 2;
+        }
+        start += slice;
+      }
+
+      return -Math.PI / 2;
+    }
+
+    function normalizeAngle(angle) {
+      return ((angle % TAU) + TAU) % TAU;
+    }
+
+    function easeOutQuint(t) {
+      return 1 - Math.pow(1 - t, 5);
+    }
+
+    function spinRoulette() {
+      if (spinning) return;
+
+      const active = getActiveParticipants();
+      const total = active.reduce((sum, item) => sum + sanitizeWeight(item.weight), 0);
+
+      if (active.length === 0 || total <= 0) {
+        showToast("倍率が0より大きい参加者を追加してください。");
+        wheelStage.classList.remove("shake");
+        void wheelStage.offsetWidth;
+        wheelStage.classList.add("shake");
+        return;
+      }
+
+      spinning = true;
+      selectedId = null;
+      resultActions.classList.add("hidden");
+      resultCard.classList.remove("has-result");
+      resultName.textContent = "抽選中…";
+      renderStats();
+      closeWinner();
+
+      const winner = weightedRandom(active);
+      const centerAngle = getParticipantCenterAngle(winner.id);
+      const currentNormalized = normalizeAngle(rotation);
+      const desiredNormalized = normalizeAngle(-Math.PI / 2 - centerAngle);
+      const adjustment = normalizeAngle(desiredNormalized - currentNormalized);
+      const fullSpins = 7 + Math.floor(Math.random() * 4);
+      const targetRotation = rotation + fullSpins * TAU + adjustment;
+      const startRotation = rotation;
+      const duration = 5000 + Math.random() * 1200;
+      const startTime = performance.now();
+
+      let lastTickSector = null;
+
+      function animate(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = easeOutQuint(progress);
+        rotation = startRotation + (targetRotation - startRotation) * eased;
+
+        drawWheel(rotation);
+
+        const tickSector = Math.floor(normalizeAngle(rotation) / (Math.PI / 18));
+        if (tickSector !== lastTickSector && progress < 0.94) {
+          lastTickSector = tickSector;
+          wheelStage.style.transform = "scale(1.003)";
+          requestAnimationFrame(() => {
+            wheelStage.style.transform = "";
+          });
+        }
+
+        if (progress < 1) {
+          animationFrameId = requestAnimationFrame(animate);
+        } else {
+          rotation = targetRotation;
+          drawWheel(rotation);
+          spinning = false;
+          selectedId = winner.id;
+          animationFrameId = null;
+          saveLastWinner(winner);
+          renderStats();
+          showWinner(winner);
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(animate);
+    }
+
+    function saveLastWinner(winner) {
+      try {
+        localStorage.setItem(LAST_WINNER_KEY, winner.name);
+      } catch (error) {
+        console.warn(error);
+      }
+      lastWinnerStat.textContent = winner.name;
+    }
+
+    function loadLastWinner() {
+      try {
+        const value = localStorage.getItem(LAST_WINNER_KEY);
+        lastWinnerStat.textContent = value || "―";
+      } catch {
+        lastWinnerStat.textContent = "―";
+      }
+    }
+
+    function showWinner(winner) {
+      resultName.textContent = `${winner.name}（倍率 ${formatWeight(winner.weight)}）`;
+      resultActions.classList.remove("hidden");
+      resultCard.classList.add("has-result");
+
+      winnerName.textContent = winner.name;
+      winnerWeight.textContent = `現在の倍率：${formatWeight(winner.weight)}`;
+      winnerOverlay.classList.add("show");
+
+      createConfetti(150);
+      showToast(`${winner.name} さんが当選しました！`);
+    }
+
+    function closeWinner() {
+      winnerOverlay.classList.remove("show");
+    }
+
+    function updateSelectedResultText() {
+      const selected = getSelectedParticipant();
+      if (!selected) return;
+
+      resultName.textContent = `${selected.name || "名前なし"}（倍率 ${formatWeight(selected.weight)}）`;
+      winnerName.textContent = selected.name || "名前なし";
+      winnerWeight.textContent = `現在の倍率：${formatWeight(selected.weight)}`;
+    }
+
+    function halveSelectedWeight() {
+      if (spinning) return;
+      const selected = getSelectedParticipant();
+      if (!selected) return;
+
+      selected.weight = sanitizeWeight(selected.weight) / 2;
+      if (Math.abs(selected.weight) < 0.0000001) selected.weight = 0;
+
+      saveParticipants();
+      renderAll();
+      updateSelectedResultText();
+      closeWinner();
+      showToast(`${selected.name} さんの倍率を半分にしました。`);
+    }
+
+    function hideSelected() {
+      if (spinning) return;
+      const selected = getSelectedParticipant();
+      if (!selected) return;
+
+      selected.weight = 0;
+      saveParticipants();
+      renderAll();
+      updateSelectedResultText();
+      closeWinner();
+      showToast(`${selected.name} さんを非表示にしました。`);
+    }
+
+    function resetResult() {
+      resultName.textContent = "まだ抽選されていません";
+      resultActions.classList.add("hidden");
+      resultCard.classList.remove("has-result");
+      closeWinner();
+    }
+
+    function reviveAll() {
+      if (spinning || participants.length === 0) return;
+
+      participants.forEach(item => {
+        item.weight = 10;
+      });
+
+      saveParticipants();
+      selectedId = null;
+      resetResult();
+      renderAll();
+      showToast("全員を倍率10で復活させました。");
+    }
+
+    function deleteAll() {
+      if (spinning || participants.length === 0) return;
+      confirmOverlay.classList.remove("hidden");
+    }
+
+    function executeDeleteAll() {
+      participants = [];
+      selectedId = null;
+      rotation = 0;
+      saveParticipants();
+
+      try {
+        localStorage.removeItem(LAST_WINNER_KEY);
+      } catch (error) {
+        console.warn(error);
+      }
+
+      lastWinnerStat.textContent = "―";
+      resetResult();
+      renderAll();
+      confirmOverlay.classList.add("hidden");
+      showToast("全ての入力を削除しました。");
+    }
+
+    function createConfetti(count) {
+      confettiLayer.innerHTML = "";
+      const colors = ["#ffdf5d", "#ff5d8f", "#6c63ff", "#22d3ee", "#38e59e", "#ffffff", "#ff914d"];
+
+      for (let i = 0; i < count; i++) {
+        const piece = document.createElement("span");
+        piece.className = "confetti";
+        piece.style.left = `${Math.random() * 100}%`;
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.borderRadius = Math.random() > 0.55 ? "50%" : "2px";
+        piece.style.width = `${5 + Math.random() * 9}px`;
+        piece.style.height = `${9 + Math.random() * 15}px`;
+        piece.style.setProperty("--duration", `${2.8 + Math.random() * 2.8}s`);
+        piece.style.setProperty("--drift", `${-130 + Math.random() * 260}px`);
+        piece.style.setProperty("--spin", `${360 + Math.random() * 1200}deg`);
+        piece.style.animationDelay = `${Math.random() * 0.55}s`;
+        confettiLayer.appendChild(piece);
+      }
+
+      setTimeout(() => {
+        confettiLayer.innerHTML = "";
+      }, 6200);
+    }
+
+    function createSparks() {
+      for (let i = 0; i < 22; i++) {
+        const spark = document.createElement("span");
+        spark.className = "spark";
+        spark.style.left = `${4 + Math.random() * 92}%`;
+        spark.style.top = `${5 + Math.random() * 90}%`;
+        spark.style.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+        spark.style.animationDelay = `${Math.random() * 2.2}s`;
+        spark.style.animationDuration = `${1.3 + Math.random() * 1.8}s`;
+        wheelStage.appendChild(spark);
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.textContent = message;
+      toastArea.appendChild(toast);
+
+      setTimeout(() => {
+        toast.remove();
+      }, 2900);
+    }
+
+    addBtn.addEventListener("click", addParticipant);
+
+    newName.addEventListener("keydown", event => {
+      if (event.key === "Enter") addParticipant();
+    });
+
+    newWeight.addEventListener("keydown", event => {
+      if (event.key === "Enter") addParticipant();
+    });
+
+    spinBtn.addEventListener("click", spinRoulette);
+    halveBtn.addEventListener("click", halveSelectedWeight);
+    hideBtn.addEventListener("click", hideSelected);
+    modalHalveBtn.addEventListener("click", halveSelectedWeight);
+    modalHideBtn.addEventListener("click", hideSelected);
+    closeWinnerBtn.addEventListener("click", closeWinner);
+    reviveAllBtn.addEventListener("click", reviveAll);
+    deleteAllBtn.addEventListener("click", deleteAll);
+    cancelDeleteBtn.addEventListener("click", () => confirmOverlay.classList.add("hidden"));
+    confirmDeleteBtn.addEventListener("click", executeDeleteAll);
+
+    winnerOverlay.addEventListener("click", event => {
+      if (event.target === winnerOverlay) closeWinner();
+    });
+
+    confirmOverlay.addEventListener("click", event => {
+      if (event.target === confirmOverlay) confirmOverlay.classList.add("hidden");
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        closeWinner();
+        confirmOverlay.classList.add("hidden");
+      }
+
+      if (
+        event.code === "Space" &&
+        document.activeElement.tagName !== "INPUT" &&
+        !spinning &&
+        !spinBtn.disabled
+      ) {
+        event.preventDefault();
+        spinRoulette();
+      }
+    });
+
+    window.addEventListener("beforeunload", () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    });
+
+    createSparks();
+    loadLastWinner();
+    renderAll();
+  </script>
+</body>
+</html>
