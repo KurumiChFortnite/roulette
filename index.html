@@ -690,6 +690,173 @@
       to { opacity: 0; transform: translateY(8px) scale(0.98); }
     }
 
+    .history-button {
+      position: absolute;
+      top: 50%;
+      right: 18px;
+      z-index: 12;
+      width: 86px;
+      min-height: 86px;
+      padding: 10px 8px;
+      transform: translateY(-50%);
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: linear-gradient(145deg, rgba(124,92,255,0.94), rgba(34,211,238,0.9));
+      color: white;
+      box-shadow: 0 16px 35px rgba(43, 111, 255, 0.34);
+      cursor: pointer;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .history-button-icon {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 26px;
+    }
+
+    .history-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(4, 6, 16, 0.72);
+      backdrop-filter: blur(10px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+
+    .history-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .history-modal {
+      width: min(620px, 100%);
+      max-height: min(78vh, 720px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 26px;
+      background: linear-gradient(145deg, rgba(26, 31, 72, 0.98), rgba(8, 15, 38, 0.98));
+      box-shadow: 0 40px 100px rgba(0,0,0,0.58);
+      transform: translateY(18px) scale(0.96);
+      transition: transform 0.25s ease;
+    }
+
+    .history-overlay.show .history-modal {
+      transform: translateY(0) scale(1);
+    }
+
+    .history-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.09);
+    }
+
+    .history-title {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .history-close {
+      width: 42px;
+      height: 42px;
+      border: 0;
+      border-radius: 13px;
+      background: rgba(255,255,255,0.09);
+      color: white;
+      font-size: 25px;
+      cursor: pointer;
+    }
+
+    .history-list {
+      min-height: 170px;
+      overflow: auto;
+      padding: 12px 16px;
+    }
+
+    .history-item {
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.075);
+    }
+
+    .history-rank {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 13px;
+      background: rgba(124,92,255,0.16);
+      color: #cfc6ff;
+      font-weight: 900;
+    }
+
+    .history-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .history-detail,
+    .history-time {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .history-time {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .history-empty {
+      min-height: 170px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    .history-footer {
+      display: flex;
+      justify-content: flex-end;
+      padding: 14px 18px 18px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    @media (max-width: 1080px) {
+      .history-button {
+        top: auto;
+        right: 14px;
+        bottom: 14px;
+        width: auto;
+        min-height: 48px;
+        padding: 0 15px;
+        transform: none;
+        border-radius: 15px;
+      }
+
+      .history-button-icon {
+        display: inline;
+        margin: 0 5px 0 0;
+        font-size: 18px;
+      }
+    }
+
     .winner-overlay {
       position: absolute;
       inset: 0;
@@ -1057,6 +1224,11 @@
               <div class="center-cap"><span>ROULETTE</span></div>
             </div>
 
+            <button id="historyBtn" class="history-button" type="button" aria-label="当選履歴を表示">
+              <span class="history-button-icon">📜</span>
+              当選履歴
+            </button>
+
             <div id="winnerOverlay" class="winner-overlay" role="dialog" aria-modal="true" aria-labelledby="winnerName">
               <div class="winner-modal">
                 <div class="winner-content">
@@ -1093,6 +1265,19 @@
     </main>
   </div>
 
+  <div id="historyOverlay" class="history-overlay" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+    <div class="history-modal">
+      <div class="history-head">
+        <h2 id="historyTitle" class="history-title">当選履歴</h2>
+        <button id="closeHistoryBtn" class="history-close" type="button" aria-label="閉じる">×</button>
+      </div>
+      <div id="historyList" class="history-list"></div>
+      <div class="history-footer">
+        <button id="clearHistoryBtn" class="btn btn-danger" type="button">履歴を全削除</button>
+      </div>
+    </div>
+  </div>
+
   <div id="confirmOverlay" class="confirm-overlay hidden">
     <div class="confirm-box">
       <h3>全て削除しますか？</h3>
@@ -1112,6 +1297,7 @@
 
     const STORAGE_KEY = "weightedRouletteParticipants_v1";
     const LAST_WINNER_KEY = "weightedRouletteLastWinner_v1";
+    const HISTORY_KEY = "weightedRouletteHistory_v1";
     const TAU = Math.PI * 2;
 
     const COLORS = [
@@ -1145,6 +1331,11 @@
     const modalHalveBtn = document.getElementById("modalHalveBtn");
     const modalHideBtn = document.getElementById("modalHideBtn");
     const closeWinnerBtn = document.getElementById("closeWinnerBtn");
+    const historyBtn = document.getElementById("historyBtn");
+    const historyOverlay = document.getElementById("historyOverlay");
+    const historyList = document.getElementById("historyList");
+    const closeHistoryBtn = document.getElementById("closeHistoryBtn");
+    const clearHistoryBtn = document.getElementById("clearHistoryBtn");
     const confettiLayer = document.getElementById("confettiLayer");
     const toastArea = document.getElementById("toastArea");
     const confirmOverlay = document.getElementById("confirmOverlay");
@@ -1152,6 +1343,7 @@
     const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
 
     let participants = loadParticipants();
+    let winnerHistory = loadHistory();
     let rotation = 0;
     let spinning = false;
     let selectedId = null;
@@ -1200,6 +1392,106 @@
         console.warn("ローカルストレージへの保存に失敗しました。", error);
         showToast("保存に失敗しました。ブラウザの設定をご確認ください。");
       }
+    }
+
+    function loadHistory() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(HISTORY_KEY));
+        if (!Array.isArray(saved)) return [];
+        return saved
+          .filter(item => item && typeof item.name === "string")
+          .slice(0, 500)
+          .map(item => ({
+            name: item.name.slice(0, 40),
+            weight: sanitizeWeight(item.weight),
+            timestamp: Number.isFinite(Number(item.timestamp)) ? Number(item.timestamp) : Date.now()
+          }));
+      } catch (error) {
+        console.warn("当選履歴を読み込めませんでした。", error);
+        return [];
+      }
+    }
+
+    function saveHistory() {
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(winnerHistory));
+      } catch (error) {
+        console.warn("当選履歴を保存できませんでした。", error);
+      }
+    }
+
+    function addWinnerHistory(winner) {
+      winnerHistory.unshift({
+        name: winner.name,
+        weight: sanitizeWeight(winner.weight),
+        timestamp: Date.now()
+      });
+      winnerHistory = winnerHistory.slice(0, 500);
+      saveHistory();
+    }
+
+    function formatHistoryTime(timestamp) {
+      const date = new Date(timestamp);
+      if (Number.isNaN(date.getTime())) return "日時不明";
+      return date.toLocaleString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = "";
+      clearHistoryBtn.disabled = winnerHistory.length === 0;
+
+      if (winnerHistory.length === 0) {
+        historyList.innerHTML = '<div class="history-empty">まだ当選履歴がありません。<br>ルーレットを回すと、ここに記録されます。</div>';
+        return;
+      }
+
+      winnerHistory.forEach((item, index) => {
+        const row = document.createElement("div");
+        row.className = "history-item";
+
+        const rank = document.createElement("div");
+        rank.className = "history-rank";
+        rank.textContent = String(winnerHistory.length - index);
+
+        const main = document.createElement("div");
+        const name = document.createElement("div");
+        name.className = "history-name";
+        name.textContent = item.name || "名前なし";
+        const detail = document.createElement("div");
+        detail.className = "history-detail";
+        detail.textContent = `当選時の倍率：${formatWeight(item.weight)}`;
+        main.append(name, detail);
+
+        const time = document.createElement("div");
+        time.className = "history-time";
+        time.textContent = formatHistoryTime(item.timestamp);
+
+        row.append(rank, main, time);
+        historyList.appendChild(row);
+      });
+    }
+
+    function openHistory() {
+      renderHistory();
+      historyOverlay.classList.add("show");
+    }
+
+    function closeHistory() {
+      historyOverlay.classList.remove("show");
+    }
+
+    function clearHistory() {
+      winnerHistory = [];
+      saveHistory();
+      renderHistory();
+      showToast("当選履歴を全て削除しました。");
     }
 
     function getActiveParticipants() {
@@ -1643,6 +1935,7 @@
           selectedId = winner.id;
           animationFrameId = null;
           saveLastWinner(winner);
+          addWinnerHistory(winner);
           renderStats();
           showWinner(winner);
         }
@@ -1757,10 +2050,12 @@
 
       try {
         localStorage.removeItem(LAST_WINNER_KEY);
+        localStorage.removeItem(HISTORY_KEY);
       } catch (error) {
         console.warn(error);
       }
 
+      winnerHistory = [];
       lastWinnerStat.textContent = "―";
       resetResult();
       renderAll();
@@ -1832,6 +2127,9 @@
     modalHalveBtn.addEventListener("click", halveSelectedWeight);
     modalHideBtn.addEventListener("click", hideSelected);
     closeWinnerBtn.addEventListener("click", closeWinner);
+    historyBtn.addEventListener("click", openHistory);
+    closeHistoryBtn.addEventListener("click", closeHistory);
+    clearHistoryBtn.addEventListener("click", clearHistory);
     reviveAllBtn.addEventListener("click", reviveAll);
     deleteAllBtn.addEventListener("click", deleteAll);
     cancelDeleteBtn.addEventListener("click", () => confirmOverlay.classList.add("hidden"));
@@ -1841,6 +2139,10 @@
       if (event.target === winnerOverlay) closeWinner();
     });
 
+    historyOverlay.addEventListener("click", event => {
+      if (event.target === historyOverlay) closeHistory();
+    });
+
     confirmOverlay.addEventListener("click", event => {
       if (event.target === confirmOverlay) confirmOverlay.classList.add("hidden");
     });
@@ -1848,6 +2150,7 @@
     document.addEventListener("keydown", event => {
       if (event.key === "Escape") {
         closeWinner();
+        closeHistory();
         confirmOverlay.classList.add("hidden");
       }
 
