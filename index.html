@@ -716,7 +716,7 @@
     }
 
     .history-overlay {
-      position: fixed;
+      position: absolute;
       inset: 0;
       z-index: 90;
       display: grid;
@@ -735,8 +735,8 @@
     }
 
     .history-modal {
-      width: min(620px, 100%);
-      max-height: min(78vh, 720px);
+      width: min(620px, calc(100% - 32px));
+      max-height: min(82%, 720px);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -1244,6 +1244,19 @@
                 </div>
               </div>
             </div>
+
+            <div id="historyOverlay" class="history-overlay" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+              <div class="history-modal">
+                <div class="history-head">
+                  <h2 id="historyTitle" class="history-title">当選履歴</h2>
+                  <button id="closeHistoryBtn" class="history-close" type="button" aria-label="閉じる">×</button>
+                </div>
+                <div id="historyList" class="history-list"></div>
+                <div class="history-footer">
+                  <button id="clearHistoryBtn" class="btn btn-danger" type="button">履歴を全削除</button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="spin-controls">
@@ -1263,19 +1276,6 @@
         </div>
       </section>
     </main>
-  </div>
-
-  <div id="historyOverlay" class="history-overlay" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
-    <div class="history-modal">
-      <div class="history-head">
-        <h2 id="historyTitle" class="history-title">当選履歴</h2>
-        <button id="closeHistoryBtn" class="history-close" type="button" aria-label="閉じる">×</button>
-      </div>
-      <div id="historyList" class="history-list"></div>
-      <div class="history-footer">
-        <button id="clearHistoryBtn" class="btn btn-danger" type="button">履歴を全削除</button>
-      </div>
-    </div>
   </div>
 
   <div id="confirmOverlay" class="confirm-overlay hidden">
@@ -1882,9 +1882,10 @@
 
       if (active.length === 0 || total <= 0) {
         showToast("倍率が0より大きい参加者を追加してください。");
-        wheelStage.classList.remove("shake");
-        void wheelStage.offsetWidth;
-        wheelStage.classList.add("shake");
+        const wheelShell = wheelStage.querySelector(".wheel-shell");
+        wheelShell.classList.remove("shake");
+        void wheelShell.offsetWidth;
+        wheelShell.classList.add("shake");
         return;
       }
 
