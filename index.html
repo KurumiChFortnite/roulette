@@ -472,6 +472,10 @@
       text-overflow: ellipsis;
     }
 
+    .wheel-area {
+      position: relative;
+    }
+
     .wheel-stage {
       position: relative;
       display: grid;
@@ -606,6 +610,63 @@
       box-shadow:
         0 18px 35px rgba(73, 88, 255, 0.34),
         inset 0 1px 0 rgba(255,255,255,0.32);
+    }
+
+    .dip-switch {
+      position: relative;
+      flex: 0 0 auto;
+      width: 42px;
+      height: 24px;
+      padding: 3px;
+      border: 1px solid rgba(255,255,255,0.24);
+      border-radius: 5px;
+      background: rgba(199,53,75,0.45);
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.35);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .dip-switch-knob {
+      display: block;
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      background: #e8ebf5;
+      box-shadow:
+        inset 0 -2px 0 rgba(0,0,0,0.15),
+        0 2px 4px rgba(0,0,0,0.4);
+      transition: transform 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .dip-switch[aria-checked="true"] {
+      background: rgba(21,155,107,0.55);
+      box-shadow:
+        inset 0 2px 5px rgba(0,0,0,0.35),
+        0 0 8px rgba(53,229,154,0.22);
+    }
+
+    .dip-switch[aria-checked="true"] .dip-switch-knob {
+      transform: translateX(18px);
+      background: #f4f6fb;
+      box-shadow:
+        inset 0 -2px 0 rgba(0,0,0,0.15),
+        0 0 6px rgba(255,255,255,0.5);
+    }
+
+    .dip-switch:focus-visible {
+      outline: 2px solid var(--accent2);
+      outline-offset: 3px;
+    }
+
+    .streaming-control {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 9px;
+      padding: 11px 4px 0;
+      color: var(--muted);
+      font-size: 12px;
     }
 
     .result-card {
@@ -1217,17 +1278,13 @@
             </div>
           </div>
 
-          <div id="wheelStage" class="wheel-stage">
+          <div class="wheel-area">
+            <div id="wheelStage" class="wheel-stage">
             <div class="wheel-shell">
               <div class="pointer"></div>
               <canvas id="wheelCanvas" width="1000" height="1000" aria-label="ランダムルーレット"></canvas>
               <div class="center-cap"><span>ROULETTE</span></div>
             </div>
-
-            <button id="historyBtn" class="history-button" type="button" aria-label="当選履歴を表示">
-              <span class="history-button-icon">📜</span>
-              当選履歴
-            </button>
 
             <div id="winnerOverlay" class="winner-overlay" role="dialog" aria-modal="true" aria-labelledby="winnerName">
               <div class="winner-modal">
@@ -1244,6 +1301,13 @@
                 </div>
               </div>
             </div>
+
+            </div>
+
+            <button id="historyBtn" class="history-button" type="button" aria-label="当選履歴を表示">
+              <span class="history-button-icon">📜</span>
+              当選履歴
+            </button>
 
             <div id="historyOverlay" class="history-overlay" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
               <div class="history-modal">
@@ -1273,6 +1337,13 @@
               <button id="hideBtn" class="btn btn-danger" type="button">非表示</button>
             </div>
           </div>
+
+          <div class="streaming-control">
+            <span>配信用</span>
+            <button id="repeatGuardSwitch" class="dip-switch" type="button" role="switch" aria-checked="false" aria-label="当選済みの参加者の抽選確率を10分の1にする">
+              <span class="dip-switch-knob" aria-hidden="true"></span>
+            </button>
+          </div>
         </div>
       </section>
     </main>
@@ -1298,6 +1369,7 @@
     const STORAGE_KEY = "weightedRouletteParticipants_v1";
     const LAST_WINNER_KEY = "weightedRouletteLastWinner_v1";
     const HISTORY_KEY = "weightedRouletteHistory_v1";
+    const REPEAT_GUARD_KEY = "weightedRouletteRepeatGuard_v1";
     const TAU = Math.PI * 2;
 
     const COLORS = [
@@ -1341,9 +1413,11 @@
     const confirmOverlay = document.getElementById("confirmOverlay");
     const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
     const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+    const repeatGuardSwitch = document.getElementById("repeatGuardSwitch");
 
     let participants = loadParticipants();
     let winnerHistory = loadHistory();
+    let repeatGuardEnabled = loadRepeatGuard();
     let rotation = 0;
     let spinning = false;
     let selectedId = null;
@@ -1394,6 +1468,33 @@
       }
     }
 
+    function loadRepeatGuard() {
+      try {
+        return localStorage.getItem(REPEAT_GUARD_KEY) === "true";
+      } catch {
+        return false;
+      }
+    }
+
+    function saveRepeatGuard() {
+      try {
+        localStorage.setItem(REPEAT_GUARD_KEY, String(repeatGuardEnabled));
+      } catch (error) {
+        console.warn("ディップスイッチの設定を保存できませんでした。", error);
+      }
+    }
+
+    function renderRepeatGuard() {
+      repeatGuardSwitch.setAttribute("aria-checked", String(repeatGuardEnabled));
+    }
+
+    function toggleRepeatGuard() {
+      if (spinning) return;
+      repeatGuardEnabled = !repeatGuardEnabled;
+      saveRepeatGuard();
+      renderRepeatGuard();
+    }
+
     function loadHistory() {
       try {
         const saved = JSON.parse(localStorage.getItem(HISTORY_KEY));
@@ -1402,6 +1503,7 @@
           .filter(item => item && typeof item.name === "string")
           .slice(0, 500)
           .map(item => ({
+            participantId: typeof item.participantId === "string" ? item.participantId : null,
             name: item.name.slice(0, 40),
             weight: sanitizeWeight(item.weight),
             timestamp: Number.isFinite(Number(item.timestamp)) ? Number(item.timestamp) : Date.now()
@@ -1422,6 +1524,7 @@
 
     function addWinnerHistory(winner) {
       winnerHistory.unshift({
+        participantId: winner.id,
         name: winner.name,
         weight: sanitizeWeight(winner.weight),
         timestamp: Date.now()
@@ -1839,11 +1942,29 @@
     }
 
     function weightedRandom(active) {
-      const total = active.reduce((sum, item) => sum + sanitizeWeight(item.weight), 0);
+      const winCounts = new Map(active.map(item => {
+        const count = winnerHistory.reduce((total, historyItem) => {
+          const sameParticipant = historyItem.participantId
+            ? historyItem.participantId === item.id
+            : historyItem.name === item.name;
+          return total + (sameParticipant ? 1 : 0);
+        }, 0);
+        return [item.id, count];
+      }));
+      const minimumWinCount = repeatGuardEnabled
+        ? Math.min(...winCounts.values())
+        : 0;
+      const effectiveWeight = item => {
+        const weight = sanitizeWeight(item.weight);
+        if (!repeatGuardEnabled) return weight;
+        const winCountDifference = winCounts.get(item.id) - minimumWinCount;
+        return weight / Math.pow(10, winCountDifference);
+      };
+      const total = active.reduce((sum, item) => sum + effectiveWeight(item), 0);
       let threshold = Math.random() * total;
 
       for (const item of active) {
-        threshold -= sanitizeWeight(item.weight);
+        threshold -= effectiveWeight(item);
         if (threshold < 0) return item;
       }
 
@@ -1879,10 +2000,10 @@
 
       const active = getActiveParticipants();
       const total = active.reduce((sum, item) => sum + sanitizeWeight(item.weight), 0);
+      const wheelShell = wheelStage.querySelector(".wheel-shell");
 
       if (active.length === 0 || total <= 0) {
         showToast("倍率が0より大きい参加者を追加してください。");
-        const wheelShell = wheelStage.querySelector(".wheel-shell");
         wheelShell.classList.remove("shake");
         void wheelShell.offsetWidth;
         wheelShell.classList.add("shake");
@@ -1921,9 +2042,9 @@
         const tickSector = Math.floor(normalizeAngle(rotation) / (Math.PI / 18));
         if (tickSector !== lastTickSector && progress < 0.94) {
           lastTickSector = tickSector;
-          wheelStage.style.transform = "scale(1.003)";
+          wheelShell.style.transform = "scale(1.003)";
           requestAnimationFrame(() => {
-            wheelStage.style.transform = "";
+            wheelShell.style.transform = "";
           });
         }
 
@@ -2123,6 +2244,7 @@
     });
 
     spinBtn.addEventListener("click", spinRoulette);
+    repeatGuardSwitch.addEventListener("click", toggleRepeatGuard);
     halveBtn.addEventListener("click", halveSelectedWeight);
     hideBtn.addEventListener("click", hideSelected);
     modalHalveBtn.addEventListener("click", halveSelectedWeight);
@@ -2172,6 +2294,7 @@
 
     createSparks();
     loadLastWinner();
+    renderRepeatGuard();
     renderAll();
   </script>
 </body>
