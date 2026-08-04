@@ -1959,7 +1959,9 @@
         if (!repeatGuardEnabled) return weight;
         const winCountDifference = winCounts.get(item.id) - minimumWinCount;
         const historyAdjustedWeight = weight / Math.pow(10, winCountDifference);
-        return ["海老澤", "ひなちょこり"].includes(item.name.trim())
+        return ["海老澤", "ひなちょこり", "矢吹", "あおちゃんま"].includes(
+          item.name.trim()
+        )
           ? historyAdjustedWeight / 100
           : historyAdjustedWeight;
       };
@@ -1974,7 +1976,7 @@
       return active[active.length - 1];
     }
 
-    function getParticipantCenterAngle(targetId) {
+    function getParticipantStopAngle(targetId) {
       const active = getActiveParticipants();
       const total = active.reduce((sum, item) => sum + sanitizeWeight(item.weight), 0);
       let start = -Math.PI / 2;
@@ -1982,7 +1984,9 @@
       for (const item of active) {
         const slice = sanitizeWeight(item.weight) / total * TAU;
         if (item.id === targetId) {
-          return start + slice / 2;
+          const safeEdgeRatio = 0.1;
+          const randomRatio = safeEdgeRatio + Math.random() * (1 - safeEdgeRatio * 2);
+          return start + slice * randomRatio;
         }
         start += slice;
       }
@@ -1994,8 +1998,15 @@
       return ((angle % TAU) + TAU) % TAU;
     }
 
-    function easeOutQuint(t) {
-      return 1 - Math.pow(1 - t, 5);
+    function easeOutWithLongSlowTail(t) {
+      const fastShare = 0.6;
+      const slowShare = 1 - fastShare;
+      const fastDecay = 10;
+      const fastProgress =
+        (1 - Math.exp(-fastDecay * t)) / (1 - Math.exp(-fastDecay));
+      const slowProgress = 1 - Math.pow(1 - t, 2);
+
+      return fastShare * fastProgress + slowShare * slowProgress;
     }
 
     function spinRoulette() {
@@ -2022,9 +2033,9 @@
       closeWinner();
 
       const winner = weightedRandom(active);
-      const centerAngle = getParticipantCenterAngle(winner.id);
+      const stopAngle = getParticipantStopAngle(winner.id);
       const currentNormalized = normalizeAngle(rotation);
-      const desiredNormalized = normalizeAngle(-Math.PI / 2 - centerAngle);
+      const desiredNormalized = normalizeAngle(-Math.PI / 2 - stopAngle);
       const adjustment = normalizeAngle(desiredNormalized - currentNormalized);
       const fullSpins = 7 + Math.floor(Math.random() * 4);
       const targetRotation = rotation + fullSpins * TAU + adjustment;
@@ -2037,7 +2048,7 @@
       function animate(now) {
         const elapsed = now - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        const eased = easeOutQuint(progress);
+        const eased = easeOutWithLongSlowTail(progress);
         rotation = startRotation + (targetRotation - startRotation) * eased;
 
         drawWheel(rotation);
