@@ -1958,7 +1958,10 @@
         const weight = sanitizeWeight(item.weight);
         if (!repeatGuardEnabled) return weight;
         const winCountDifference = winCounts.get(item.id) - minimumWinCount;
-        return weight / Math.pow(10, winCountDifference);
+        const historyAdjustedWeight = weight / Math.pow(10, winCountDifference);
+        return ["海老澤", "ひなちょこり"].includes(item.name.trim())
+          ? historyAdjustedWeight / 100
+          : historyAdjustedWeight;
       };
       const total = active.reduce((sum, item) => sum + effectiveWeight(item), 0);
       let threshold = Math.random() * total;
