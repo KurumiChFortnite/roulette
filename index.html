@@ -1959,7 +1959,7 @@
         if (!repeatGuardEnabled) return weight;
         const winCountDifference = winCounts.get(item.id) - minimumWinCount;
         const historyAdjustedWeight = weight / Math.pow(10, winCountDifference);
-        return ["海老澤", "ひなちょこり", "矢吹", "あおちゃんま"].includes(
+        return ["海老澤", "ひなちょこり"].includes(
           item.name.trim()
         )
           ? historyAdjustedWeight / 100
